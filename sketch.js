@@ -146,7 +146,7 @@ function draw() {
     else
     {
       // circles.push(["pixelList",floodFill(mouseX, mouseY, drawingColor, get(mouseX, mouseY)),drawingColor])
-      floodFill(mouseX,mouseY,drawingColor,get(mouseX,mouseY))
+      circles.push(["pixelList",floodFill(mouseX,mouseY,drawingColor,get(mouseX,mouseY)),drawingColor])
       console.log(mouseIsPressed)
       // console.log("FLOOD")
     }
@@ -197,6 +197,7 @@ function draw() {
 function place(object, index, arr) {
   if(object[0]=="circle")
   {
+    console.log("CIRCLE")
     let circlep = object[1]
     fill(circlep[3])
     noStroke()
@@ -206,11 +207,18 @@ function place(object, index, arr) {
 
     if(object[0]="pixelList")
     {
+      
+      console.log("PIXELLIST")
       for(let pixel in object[1])
       {
-        set(pixel[0],pixel[1],object[2])
+        
+        
+        set(pixel.x,pixel.y,object[2])
+        
       }
+      updatePixels()
     }
+    
   }
   
 
@@ -297,8 +305,6 @@ function floodFill(X, Y, colorToFill, colorToBeFilled) {
     let pix = stack.pop();
     let currentX = pix.x;
     let currentY = pix.y;
-
-    console.log((toReturn.length/(stack.length+toReturn.length)*100).toFixed(4), currentX, currentY,toReturn.length,stack.length)
     toReturn.push(new Pixel(currentX, currentY));
     set(currentX, currentY, colorToFill); // Fill the current pixel with the new color
 
