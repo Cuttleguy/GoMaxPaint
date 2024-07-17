@@ -101,9 +101,13 @@ let floodFillMode = false
 let erasingColor
 let img
 let frames=0
+let floodFillPrevious = false
 function preload() {
   img = loadImage("assets/art/output-onlinepngtools.png")
 }
+let pg
+let cg
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   listOfColors = [color("#FFFFFF"), color("#FF0000"), color("#FFA500"), color("#FFFF00"), color("#00FF00"), color("#0000FF"), color("#800080")]
@@ -114,19 +118,32 @@ function setup() {
   if (ctx) {
     ctx.canvas.getContext('2d').willReadFrequently = true;
   }
-  
+  pg=createGraphics(windowWidth,windowHeight)
+  cg=createGraphics(windowWidth,windowHeight)
+  background(0)
+  pg.background(0)
 }
 const circles = []
 let strokeWidth = 80
 let oldMouse = [null,null]
 
 function draw() {
+  if(floodFillPrevious)
+  {
+    // circles.forEach(place)
+    floodFillPrevious=false
+  }
+
+  // background(0)
   background(0)
   noStroke()
-  circles.forEach(place)
-  frames++
-  console.log(frames)
-  console.log(mouseIsPressed)
+  pg.noStroke()
+  
+  
+  
+  
+  
+  
   if (mouseIsPressed && !arrayEquals(oldMouse,[mouseX,mouseY])) {
     console.log("NEW PRESS")
     oldMouse[0]=mouseX
@@ -136,19 +153,39 @@ function draw() {
       if (!(circles.includes([mouseX, mouseY]))) {
         if (erasingMode) {
           circles.push(["circle",[mouseX, mouseY, strokeWidth, erasingColor]])
+          pg.fill(erasingColor)
+          pg.circle(mouseX,mouseY,strokeWidth)
         }
         else {
           circles.push(["circle",[mouseX, mouseY, strokeWidth, drawingColor]])
+          console.log("CIRCLE")
+          pg.fill(drawingColor)
+          pg.circle(mouseX,mouseY,strokeWidth)
         }
 
       }
     }
-    else
+    
+
+
+
+
+
+
+
+
+
+    if(floodFillMode)
     {
-      // circles.push(["pixelList",floodFill(mouseX, mouseY, drawingColor, get(mouseX, mouseY)),drawingColor])
-      circles.push(["pixelList",floodFill(mouseX,mouseY,drawingColor,get(mouseX,mouseY)),drawingColor])
-      console.log(mouseIsPressed)
-      // console.log("FLOOD")
+     
+      let X1=mouseX
+      let Y1=mouseY
+      floodFill(mouseX,mouseY,drawingColor,pg.get(mouseX,mouseY))
+      
+      // circles.forEach(place)
+      console.log("FLOOD")
+      console.log(pg.get(X1,Y1))
+      floodFillPrevious=true
     }
     
     // else {
@@ -168,15 +205,14 @@ function draw() {
 //     console.log("FLOOD")
 //   }
 // }
-  
-
+image(pg,0,0)
+//----CURSOR---- 
   fill(drawingColor)
   if (erasingMode) {
     fill(erasingColor)
     stroke(255, 255, 255)
   }
-
-
+ 
 
 
   if (floodFillMode) {
@@ -190,18 +226,22 @@ function draw() {
     circle(mouseX, mouseY, strokeWidth)
   }
 
+  // Draw FPS (rounded to 2 decimal places) at the bottom left of the screen
+let fps = frameRate();
+fill(255);
+stroke(0);
+text("FPS: " + fps.toFixed(2), 10, height - 10);
 
 
-  
 }
 function place(object, index, arr) {
   if(object[0]=="circle")
   {
     console.log("CIRCLE")
     let circlep = object[1]
-    fill(circlep[3])
-    noStroke()
-    circle(circlep[0], circlep[1], circlep[2])
+    pg.fill(circlep[3])
+    pg.noStroke()
+    pg.circle(circlep[0], circlep[1], circlep[2])
   }
   else{
 
@@ -213,126 +253,122 @@ function place(object, index, arr) {
       {
         
         
-        set(pixel.x,pixel.y,object[2])
+        // pg.set(pixel.x,pixel.y,object[2])
         
       }
-      updatePixels()
+      
     }
     
   }
   
 
 }
-// function floodFill(X, Y, colorToFill, colorToBeFilled) {
-//   // console.log(colorToBeFilled==get(X + 1, Y))
-//   // console.log(X+ " " + Y)
-//   let pixels = []
-//   // console.log(get(X + 1, Y))
-  
-//   if (arrayEquals(get(X + 1, Y),colorToBeFilled)) {
-    
-//     pixels.push(X + 1, Y)
-//     pixels.concat(floodFill(X + 1, Y, colorToFill, colorToBeFilled))
-//   }
-//   if (arrayEquals(get(X, Y + 1),colorToBeFilled)) {
-//     pixels.push(X, Y + 1)
-//     pixels.concat(floodFill(X, Y + 1, colorToFill, colorToBeFilled))
-//   }
-//   if (arrayEquals(get(X - 1, Y),colorToBeFilled)) {
-//     pixels.push(X - 1, Y)
-//     pixels.concat(floodFill(X - 1, Y, colorToFill, colorToBeFilled))
-//   }
-//   if (arrayEquals(get(X, Y - 1), colorToBeFilled)) {
-//     pixels.push(X, Y - 1)
-//     pixels.concat(floodFill(X, Y - 1, colorToFill, colorToBeFilled))
-//   }
-//   return(pixels)
-// }
-// function floodFill(X, Y, colorToFill, colorToBeFilled) {
-//   console.log(X, Y)
-//   // let test = [new Pixel(3,4),new Pixel(5,7),new Pixel(2,9)]
-//   // console.log(test.includes(new Pixel(3,4)))
-//   // console.log(new Pixel(3,4)==new Pixel(3,4))
-//   debugger
-  
-//   let stack = [];
-//   stack.push(new Pixel(X,Y));
-//   let toReturn=[]
-//   while (stack.length > 0) {
-//     let pix = stack.pop()
-//     let currentX=pix.x
-//     let currentY=pix.y
-//     console.log((toReturn.length/(stack.length+toReturn.length)*100).toFixed(4), currentX, currentY,toReturn.length,stack.length)
-    
-//     toReturn.push(new Pixel(currentX,currentY))
-//     if (arrayEquals(get(currentX, currentY), colorToBeFilled)) {
-//       set(currentX, currentY, colorToFill);
-      
 
-//       // Push adjacent pixels onto the stack if they need filling
-//       if (currentX + 1 < width && arrayEquals(get(currentX + 1, currentY), colorToBeFilled) && !stack.includesPixel(new Pixel(currentX,currentY)) && !toReturn.includesPixel(new Pixel(currentX,currentY))) {
-//         stack.push(new Pixel(currentX+1,currentY));
-        
-//       }
-//       if (currentX - 1 >= 0 && arrayEquals(get(currentX - 1, currentY), colorToBeFilled)  && !stack.includesPixel(new Pixel(currentX,currentY)) && !toReturn.includesPixel(new Pixel(currentX,currentY))) {
-//         stack.push(new Pixel(currentX-1,currentY));
-        
-//       }
-//       if (currentY + 1 < height && arrayEquals(get(currentX, currentY + 1), colorToBeFilled) && !stack.includesPixel(new Pixel(currentX,currentY)) && !toReturn.includesPixel(new Pixel(currentX,currentY))) {
-//         stack.push(new Pixel(currentX,currentY-1));
-        
-      
-//       if (currentY - 1 >= 0 && arrayEquals(get(currentX, currentY - 1), colorToBeFilled) && !stack.includesPixel(new Pixel(currentX,currentY)) && !toReturn.includesPixel(new Pixel(currentX,currentY))) {
-//         stack.push(new Pixel(currentX,currentY-1));
-        
-//       }
-//     }
-
-//   }
-//   return(toReturn)
-
-// }
-// }
 function floodFill(X, Y, colorToFill, colorToBeFilled) {
   let stack = [];
-  let toReturn = [];
+  // let toReturn = [];
   let visited = new Set(); // Use a Set to track visited pixels
   
+  console.log(`Hello from floodFill(${X}, ${Y}, ${colorToFill}, ${colorToBeFilled})`)
+
   stack.push(new Pixel(X, Y));
   visited.add(`${X},${Y}`); // Mark the starting pixel as visited
-
   while (stack.length > 0) {
+    
     let pix = stack.pop();
     let currentX = pix.x;
     let currentY = pix.y;
-    toReturn.push(new Pixel(currentX, currentY));
-    set(currentX, currentY, colorToFill); // Fill the current pixel with the new color
-
+    //toReturn.push(new Pixel(currentX, currentY));
+    
+    // console.log(colorToFill)
+    pg.set(currentX, currentY, colorToFill); // Fill the current pixel with the new color
+    // console.log("before updatePixels", pg.get(currentX,currentY))
+    
+    pg.updatePixels(currentX,currentY,1,1)
+    // pg.updatePixels()
+    // console.log(pg.get(currentX,currentY))
+    
     // Check and push adjacent pixels onto the stack if they need filling
     // Right
-    if (currentX + 1 < width && !visited.has(`${currentX + 1},${currentY}`) && arrayEquals(get(currentX + 1, currentY), colorToBeFilled)) {
+    if (currentX + 1 < pg.width && !visited.has(`${currentX + 1},${currentY}`) && arrayEquals(pg.get(currentX + 1, currentY), colorToBeFilled)) {
       stack.push(new Pixel(currentX + 1, currentY));
       visited.add(`${currentX + 1},${currentY}`);
+      
     }
     // Left
-    if (currentX - 1 >= 0 && !visited.has(`${currentX - 1},${currentY}`) && arrayEquals(get(currentX - 1, currentY), colorToBeFilled)) {
+    if (currentX - 1 >= 0 && !visited.has(`${currentX - 1},${currentY}`) && arrayEquals(pg.get(currentX - 1, currentY), colorToBeFilled)) {
       stack.push(new Pixel(currentX - 1, currentY));
       visited.add(`${currentX - 1},${currentY}`);
     }
     // Down
-    if (currentY + 1 < height && !visited.has(`${currentX},${currentY + 1}`) && arrayEquals(get(currentX, currentY + 1), colorToBeFilled)) {
+    if (currentY + 1 < pg.height && !visited.has(`${currentX},${currentY + 1}`) && arrayEquals(pg.get(currentX, currentY + 1), colorToBeFilled)) {
       stack.push(new Pixel(currentX, currentY + 1));
       visited.add(`${currentX},${currentY + 1}`);
     }
     // Up
-    if (currentY - 1 >= 0 && !visited.has(`${currentX},${currentY - 1}`) && arrayEquals(get(currentX, currentY - 1), colorToBeFilled)) {
+    if (currentY - 1 >= 0 && !visited.has(`${currentX},${currentY - 1}`) && arrayEquals(pg.get(currentX, currentY - 1), colorToBeFilled)) {
       stack.push(new Pixel(currentX, currentY - 1));
       visited.add(`${currentX},${currentY - 1}`);
     }
   }
-
-  return toReturn;
+  // pg.updatePixels()
+  return //toReturn;
 }
+function floodFillMulti(X, Y, colorToFill, colorToBeFilled) {
+  let stack = [];
+  let toReturn = [];
+  let visited = new Set();
+  let workers = []; // Array to store worker instances
+  let pgData = pg; // Assuming pg is your canvas context or data
+
+  stack.push({ x: X, y: Y });
+  visited.add(`${X},${Y}`);
+
+  const numWorkers = 4; // Number of workers to use
+  const chunkWidth = Math.ceil(pgData.width / numWorkers);
+
+  // Function to create a worker
+  function createWorker() {
+      let worker = new Worker('worker.js');
+
+      // Listen for messages from the worker
+      worker.addEventListener('message', function(e) {
+          // e.data will contain the processed results from the worker
+          toReturn = toReturn.concat(e.data);
+
+          // Check if all workers have finished
+          if (toReturn.length === pgData.width * pgData.height) {
+              // All items processed, do something with toReturn
+              console.log('Flood fill completed:', toReturn);
+              // Update pixels or handle completion
+              pgData.updatePixels(); // Example: Update canvas pixels
+          }
+      });
+
+      return worker;
+  }
+
+  // Create workers and assign them chunks of the canvas to process
+  for (let i = 0; i < numWorkers; i++) {
+      let startX = i * chunkWidth;
+      let endX = Math.min(startX + chunkWidth, pgData.width);
+
+      let worker = createWorker();
+      workers.push(worker);
+
+      // Start the worker with the current chunk
+      worker.postMessage({
+          startX: startX,
+          startY: 0,
+          colorToFill: colorToFill,
+          colorToBeFilled: colorToBeFilled,
+          pgData: pgData,
+          width: pgData.width,
+          height: pgData.height
+      });
+  }
+}
+
 function keyPressed() {
   console.log("PRESS")
   if (key == "c") {
@@ -369,7 +405,7 @@ function keyPressed() {
       floodFillMode = !floodFillMode
     }
     if (key === 's' || key === 'S') {
-      saveCanvas('myCanvas', 'jpg');
+      pg.saveCanvas('myCanvas', 'jpg');
 
     }
   }
