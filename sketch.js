@@ -41,6 +41,7 @@ let pixel1 = new Pixel(1, 2);
 let pixel2 = new Pixel(3, 4);
 let pixel3 = new Pixel(1, 2);
 
+let transparency = 255
 let pixelArray = [pixel1, pixel2];
 
 console.log(pixelArray.includesPixel(pixel2));  // Output: true
@@ -95,6 +96,7 @@ function arrayEquals(a,b)
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 let listOfColors
 let drawingColor
+let workingColor
 let colorIndex
 let erasingMode = false
 let floodFillMode = false
@@ -108,37 +110,78 @@ function preload() {
 let pg
 let cg
 
+let colorPickerWidth
+let colorNames=["white","red","orange","yellow","green","blue","purple"]
+let colorsToJson=[]
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  listOfColors = [color("#FFFFFF"), color("#FF0000"), color("#FFA500"), color("#FFFF00"), color("#00FF00"), color("#0000FF"), color("#800080")]
-  drawingColor = listOfColors[0]
+  if(localStorage.getItem("listOfColors")!=null)
+  {
+    listOfColors=JSON.parse(localStorage.getItem("listOfColors"))
+  }
+  else
+  {
+    listOfColors = ["#FFFFFF", "#FF0000", "#FFA500", "#FFFF00", "#00FF00", "#0000FF", "#800080"]
+    console.log(listOfColors)
+  }
+  if(localStorage.getItem("colorNames")!=null)
+  {
+    colorNames=JSON.parse(localStorage.getItem("colorNames"))
+  }
+  for (let i = 0; i < listOfColors.length; i++) {
+    const color = listOfColors[i];
+    const name = colorNames[i];
+    colorsToJson.push([name,color])
+    
+  }
+  
+  drawingColor = color(listOfColors[0])
   colorIndex = 0
   erasingColor = color("#000000")
   const ctx = drawingContext;
   if (ctx) {
     ctx.canvas.getContext('2d').willReadFrequently = true;
   }
+  colorPickerWidth=Math.floor(windowWidth/4.5)
   pg=createGraphics(windowWidth,windowHeight)
+  
+
   cg=createGraphics(windowWidth,windowHeight)
   background(0)
   pg.background(0)
+  pg.noSmooth()
+  pg.setAttributes("antialias",false)
+  // ui.circle(1900,400,20)
+
+  console.log(Math.floor(colorPickerWidth/2)+windowWidth-colorPickerWidth)
+  
+  
+  
 }
 const circles = []
-let strokeWidth = 80
+let strokeWidth = 81
 let oldMouse = [null,null]
-
+function colorsMatch(a,b)
+{
+  
+}
 function draw() {
+
+  pg.noSmooth()
   if(floodFillPrevious)
   {
     // circles.forEach(place)
     floodFillPrevious=false
   }
-
+  
   // background(0)
   background(0)
   noStroke()
   pg.noStroke()
   
+  
+  workingColor=color(red(drawingColor),green(drawingColor),blue(drawingColor),transparency)
+ 
   
   
   
@@ -157,9 +200,9 @@ function draw() {
           pg.circle(mouseX,mouseY,strokeWidth)
         }
         else {
-          circles.push(["circle",[mouseX, mouseY, strokeWidth, drawingColor]])
+          circles.push(["circle",[mouseX, mouseY, strokeWidth, workingColor]])
           console.log("CIRCLE")
-          pg.fill(drawingColor)
+          pg.fill(workingColor)
           pg.circle(mouseX,mouseY,strokeWidth)
         }
 
@@ -180,7 +223,15 @@ function draw() {
      
       let X1=mouseX
       let Y1=mouseY
-      floodFill(mouseX,mouseY,drawingColor,pg.get(mouseX,mouseY))
+      if(erasingMode)
+      {
+        floodFill(mouseX,mouseY,erasingColor,pg.get(mouseX,mouseY))
+      }
+      else
+      {
+        floodFill(mouseX,mouseY,workingColor,pg.get(mouseX,mouseY))
+      }
+      
       
       // circles.forEach(place)
       console.log("FLOOD")
@@ -206,8 +257,14 @@ function draw() {
 //   }
 // }
 image(pg,0,0)
+
+
 //----CURSOR---- 
-  fill(drawingColor)
+  if(true)
+  {
+
+  
+  fill(workingColor)
   if (erasingMode) {
     fill(erasingColor)
     stroke(255, 255, 255)
@@ -216,16 +273,29 @@ image(pg,0,0)
 
 
   if (floodFillMode) {
-    fill(drawingColor)
-    circle(mouseX, mouseY, 30)
-    fill(0)
-    text("F", mouseX, mouseY)
+    if(!erasingMode)
+    {
+      fill(workingColor)
+      circle(mouseX, mouseY, 30)
+      fill(0)
+      text("F", mouseX, mouseY)
+    }
+    else
+    {
+      stroke(0)
+      fill(erasingColor)
+      circle(mouseX, mouseY, 30)
+      fill(255)
+      text("F", mouseX, mouseY)
+      noStroke()
+    }
+    
 
   }
   else {
     circle(mouseX, mouseY, strokeWidth)
   }
-
+}
   // Draw FPS (rounded to 2 decimal places) at the bottom left of the screen
 let fps = frameRate();
 fill(255);
@@ -266,13 +336,30 @@ function place(object, index, arr) {
 
 function floodFill(X, Y, colorToFill, colorToBeFilled) {
   let stack = [];
+  let overExtension=[];
+  if(red(colorToFill)==red(colorToBeFilled)&&green(colorToFill)==green(colorToBeFilled)&&blue(colorToFill)==blue(colorToBeFilled)&&alpha(colorToFill)==alpha(colorToBeFilled))
+  {
+    return
+  }
   // let toReturn = [];
   let visited = new Set(); // Use a Set to track visited pixels
-  
+
   console.log(`Hello from floodFill(${X}, ${Y}, ${colorToFill}, ${colorToBeFilled})`)
 
   stack.push(new Pixel(X, Y));
+  let topLeftColor
   visited.add(`${X},${Y}`); // Mark the starting pixel as visited
+  for (let x = 0; x < 1; x++) {
+    for (let y = 0; y < 1; y++) {
+      topLeftColor=get(pg.set(x,y,colorToFill))
+      pg.set(x,y,colorToFill)
+      pg.updatePixels(x,y,1,1)
+    }
+    
+  }
+  // pg.set(0,0,drawingColor)
+  // pg.loadPixels()
+
   while (stack.length > 0) {
     
     let pix = stack.pop();
@@ -282,9 +369,12 @@ function floodFill(X, Y, colorToFill, colorToBeFilled) {
     
     // console.log(colorToFill)
     pg.set(currentX, currentY, colorToFill); // Fill the current pixel with the new color
+    // pg.pixels[currentX+currentY*pg.width]=colorToFill
+    
     // console.log("before updatePixels", pg.get(currentX,currentY))
     
     pg.updatePixels(currentX,currentY,1,1)
+    
     // pg.updatePixels()
     // console.log(pg.get(currentX,currentY))
     
@@ -310,7 +400,88 @@ function floodFill(X, Y, colorToFill, colorToBeFilled) {
       stack.push(new Pixel(currentX, currentY - 1));
       visited.add(`${currentX},${currentY - 1}`);
     }
+    // Right Down
+    if (currentY + 1 >= 0 && currentX + 1 < pg.width && !visited.has(`${currentX+1},${currentY + 1}`) && arrayEquals(pg.get(currentX+1, currentY + 1), colorToBeFilled)) {
+      stack.push(new Pixel(currentX+1, currentY + 1));
+      visited.add(`${currentX+1},${currentY + 1}`);
+ 
+    }
+    // Left Down
+    if (currentY + 1 >= 0 && currentX - 1 < pg.width && !visited.has(`${currentX-1},${currentY + 1}`) && arrayEquals(pg.get(currentX-1, currentY + 1), colorToBeFilled)) {
+      stack.push(new Pixel(currentX-1, currentY + 1));
+      visited.add(`${currentX-1},${currentY + 1}`);
+
+    }
+    // Right Up
+    if (currentY - 1 >= 0 && currentX + 1 < pg.width && !visited.has(`${currentX-1},${currentY + 1}`) && arrayEquals(pg.get(currentX-1, currentY + 1), colorToBeFilled)) {
+      stack.push(new Pixel(currentX+1, currentY - 1));
+      visited.add(`${currentX+1},${currentY - 1}`);
+    }
+    // Left Up
+    
+    if (currentY - 1 >= 0 && currentX - 1 < pg.width && !visited.has(`${currentX-1},${currentY - 1}`) && arrayEquals(pg.get(currentX-1, currentY - 1), colorToBeFilled)) {
+      stack.push(new Pixel(currentX-1, currentY - 1));
+      visited.add(`${currentX-1},${currentY - 1}`);
+    }
+    // // Right
+    // if (currentX + 2 < pg.width && !visited.has(`${currentX + 2},${currentY}`) && arrayEquals(pg.get(currentX + 2, currentY), colorToBeFilled)) {
+    //   stack.push(new Pixel(currentX + 2, currentY));
+    //   visited.add(`${currentX + 2},${currentY}`);
+      
+    // }
+    // // Left
+    // if (currentX - 2 >= 0 && !visited.has(`${currentX - 2},${currentY}`) && arrayEquals(pg.get(currentX - 2, currentY), colorToBeFilled)) {
+    //   stack.push(new Pixel(currentX - 2, currentY));
+    //   visited.add(`${currentX - 2},${currentY}`);
+    // }
+    // // Down
+    // if (currentY + 2 < pg.height && !visited.has(`${currentX},${currentY + 2}`) && arrayEquals(pg.get(currentX, currentY + 2), colorToBeFilled)) {
+    //   stack.push(new Pixel(currentX, currentY + 2));
+    //   visited.add(`${currentX},${currentY + 2}`);
+    // }
+    // // Up
+    // if (currentY - 2 >= 0 && !visited.has(`${currentX},${currentY - 2}`) && arrayEquals(pg.get(currentX, currentY - 2), colorToBeFilled)) {
+    //   stack.push(new Pixel(currentX, currentY - 2));
+    //   visited.add(`${currentX},${currentY - 2}`);
+    // }
+    // ---- Over Extension ----
+    if (currentX + 1 < pg.width && !visited.has(`${currentX + 1},${currentY}`) && !arrayEquals(pg.get(currentX + 1, currentY), colorToBeFilled)) {
+      overExtension.push(new Pixel(currentX + 1, currentY));
+      visited.add(`${currentX + 1},${currentY}`);
+      
+    }
+    // Left
+    if (currentX - 1 >= 0 && !visited.has(`${currentX - 1},${currentY}`) && !arrayEquals(pg.get(currentX - 1, currentY), colorToBeFilled)) {
+      overExtension.push(new Pixel(currentX - 1, currentY));
+      visited.add(`${currentX - 1},${currentY}`);
+    }
+    // Down
+    if (currentY + 1 < pg.height && !visited.has(`${currentX},${currentY + 1}`) && !arrayEquals(pg.get(currentX, currentY + 1), colorToBeFilled)) {
+      overExtension.push(new Pixel(currentX, currentY + 1));
+      visited.add(`${currentX},${currentY + 1}`);
+    }
+    // Up
+    if (currentY - 1 >= 0 && !visited.has(`${currentX},${currentY - 1}`) && !arrayEquals(pg.get(currentX, currentY - 1), colorToBeFilled)) {
+      overExtension.push(new Pixel(currentX, currentY - 1));
+      visited.add(`${currentX},${currentY - 1}`);
+    }
   }
+  while(overExtension.length!=0)
+  {
+    let pix = overExtension.pop()
+    let currentX=pix.x
+    let currentY=pix.y
+    pg.set(currentX,currentY,colorToFill)
+    pg.updatePixels(currentX,currentY,1,1)
+  }
+  // for (let x = 0; x < 1; x++) {
+  //   for (let y = 0; y < 1; y++) {
+      
+  //     pg.set(x,y,topLeftColor)
+  //     pg.updatePixels(x,y,1,1)
+  //   }
+    
+  // }
   // pg.updatePixels()
   return //toReturn;
 }
@@ -370,17 +541,32 @@ function floodFillMulti(X, Y, colorToFill, colorToBeFilled) {
 }
 
 function keyPressed() {
-  console.log("PRESS")
+
   if (key == "c") {
-    circles.length = 0
+    
   }
   else {
     if (key == "=") {
       strokeWidth += 10
     }
     if (key == "-") {
-      if (width != 0) {
+      if (width > 1) {
         strokeWidth -= 10
+      }
+
+    }
+    if (key == "w") {
+      
+      transparency += 50
+      if(transparency>255)
+      {
+        transparency=255
+      }
+    }
+    if (key == "s") {
+      transparency -= 50
+      if (transparency < 0) {
+        transparency=5
       }
 
     }
@@ -389,14 +575,14 @@ function keyPressed() {
       if (colorIndex < 0) {
         colorIndex = listOfColors.length + colorIndex
       }
-      drawingColor = listOfColors[colorIndex]
+      drawingColor = color(listOfColors[colorIndex])
     }
     if (key == "d" && !erasingMode) {
       colorIndex++
       if (colorIndex == listOfColors.length) {
         colorIndex = 0
       }
-      drawingColor = listOfColors[colorIndex]
+      drawingColor = color(listOfColors[colorIndex])
     }
     if (key == "e") {
       erasingMode = !erasingMode
@@ -404,12 +590,70 @@ function keyPressed() {
     if (key == "f") {
       floodFillMode = !floodFillMode
     }
-    if (key === 's' || key === 'S') {
-      pg.saveCanvas('myCanvas', 'jpg');
+    if (key === 'u' || key === 'U') {
+      // console.log(JSON.stringify(colorsToJson))
+ 
+      pg.save('myCanvas');
+      console.log("SAVE")
 
     }
+    // if(key === "l")
+    // {
+    //   let filename=prompt("File Name?","colorlist.txt")
+    //   console.log()
+    //   let file = loadStrings("assets/text/"+filename)
+    //   console.log(file)
+    //   console.log(typeof(file))
+    //   console.log(file.join())
+    //   console.log(file.at(0))
+    //   let colorsToJson=JSON.parse(file.at(0))
+    //   listOfColors.length=0
+    //     colorNames.length=0
+    //   for(colorPair in colorsToJson)
+    //   { 
+    //     colorNames.push(colorPair[0])
+    //     listOfColors.push(colorPair[1])
+    //   }
+    // }
+    if(key === "n" || key === "N")
+    {
+      let newColor=prompt("Name of new color?","Gray")
+      
+      let newHex = prompt("Hex code of new color?","#888888")
+      colorNames.push(newColor.toLowerCase())
+      listOfColors.push(newHex)
+      colorsToJson.push([newColor,listOfColors])
+      localStorage.setItem("listOfColors",JSON.stringify(listOfColors))
+      localStorage.setItem("colorNames",JSON.stringify(colorNames))
+    }
+    if(key === "g" || key === "G")
+    {
+      chooseNewColor()
+    }
+    
   }
 } 
+function chooseNewColor()
+{
+  let colorToSwitch=prompt("Choose a color?","white").toLowerCase()
+  let newIndex=colorNames.indexOf(colorToSwitch)
+  if(newIndex==-1)
+  {
+    if(colorToSwitch=="black")
+    {
+      erasingMode=true
+    }
+    else
+    {
+      alert("Not a color in list")
+      chooseNewColor()
+    }
+    
+  }
+  colorIndex=newIndex
+  drawingColor=color(listOfColors[colorIndex])
+  
+}
 // function floodFill(X, Y, colorToFill, colorToBeFilled) {
 //   // Send data to the worker for processing
 //   worker.postMessage({
