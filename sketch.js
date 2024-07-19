@@ -134,7 +134,7 @@ function setup() {
     colorsToJson.push([name,color])
     
   }
-  
+  noCursor()
   drawingColor = color(listOfColors[0])
   colorIndex = 0
   erasingColor = color("#000000")
@@ -152,6 +152,7 @@ function setup() {
   pg.noSmooth()
   pg.setAttributes("antialias",false)
   // ui.circle(1900,400,20)
+  frameRate(96)
 
   console.log(Math.floor(colorPickerWidth/2)+windowWidth-colorPickerWidth)
   
@@ -620,11 +621,15 @@ function keyPressed() {
       let newColor=prompt("Name of new color?","Gray")
       
       let newHex = prompt("Hex code of new color?","#888888")
-      colorNames.push(newColor.toLowerCase())
-      listOfColors.push(newHex)
-      colorsToJson.push([newColor,listOfColors])
-      localStorage.setItem("listOfColors",JSON.stringify(listOfColors))
-      localStorage.setItem("colorNames",JSON.stringify(colorNames))
+      if(!colorNames.includes(newColor))
+      {
+        colorNames.push(newColor.toLowerCase())
+        listOfColors.push(newHex)
+        colorsToJson.push([newColor,listOfColors])
+        localStorage.setItem("listOfColors",JSON.stringify(listOfColors))
+        localStorage.setItem("colorNames",JSON.stringify(colorNames))
+      }
+      
     }
     if(key === "g" || key === "G")
     {
